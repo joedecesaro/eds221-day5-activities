@@ -1,0 +1,77 @@
+---
+title: "us_tilapia_imports"
+author: "Joe DeCesaro"
+date: "8/13/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(here)
+library(tidyverse)
+library(janitor)
+library(skimr)
+```
+
+Read in the data as us_tilapia_imports
+```{r}
+us_tilapia_imports <- read_csv(here("data", "us_tilapia_imports.csv"))
+
+summary(us_tilapia_imports)
+
+names(us_tilapia_imports)
+
+skim(us_tilapia_imports)
+
+dim(us_tilapia_imports)
+```
+
+```{r}
+us_tilapia_long <- us_tilapia_imports %>% 
+  pivot_longer(-country, names_to = "year", values_to = "tilapia_totals") %>% 
+  mutate(year = as.numeric(year))
+
+class(us_tilapia_long$year)
+
+
+```
+
+```{r}
+yearly_tilapia_tot <- us_tilapia_long %>% 
+  dplyr::group_by(year) %>% 
+  summarize(tilapia_tot = sum(tilapia_totals, na.rm = TRUE))
+yearly_tilapia_tot
+```
+```{r}
+yearly_tilapia_fig <- ggplot(data = yearly_tilapia_tot, aes(x = year, y = tilapia_tot)) + 
+  geom_line() + 
+  labs(x = "Year", 
+       y = "Tilapia Total Imports (1000s of lbs)")
+yearly_tilapia_fig
+
+ggsave(filename = here("figs", "yearly_tilapia_totals.png"))
+```
+
+Create a subset that only retains imports from Ecuador, Honduras, Costa Rica, and Mexico (you decide what to name this)
+```{r}
+central_am_tilapia <- us_tilapia_long %>% 
+  filter(country %in% c("Ecuador", "Honduras", "Costa Rica", "Mexico"))
+```
+
+```{r}
+yearly_tilapia_cent_am <- ggplot(data = central_am_tilapia, aes(x = year, y = tilapia_totals, color = country)) + 
+  geom_point(size = 1.5) +
+  geom_line(size = 1.2) +
+  scale_colour_viridis_d(option = "C") +
+  labs(y = "Tilapia Total Imports (1000s of lbs)", 
+       x = "Year", 
+       title = "Tilapia Imports in Thousands of Pounds from 1992 to 2018",
+       color = "Country") +
+  theme_dark()
+  
+yearly_tilapia_cent_am
+
+ggsave(filename = here("figs", "yearly_tilapia_cent_am.jpg"))
+
+```
+
